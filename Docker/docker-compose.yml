@@ -1,0 +1,38 @@
+version: '3.7'
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    hostname: mysql
+    restart: unless-stopped
+    volumes:
+      - ../Data/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=changeme
+      - MYSQL_DATABASE=leantime
+      - MYSQL_USER=leantime
+      - MYSQL_PASSWORD=changeme
+    command: --character-set-server=utf8 --collation-server=utf8_unicode_ci
+  leantime:
+    image: leantime/leantime:latest
+    container_name: leantime
+    hostname: leantime
+    restart: unless-stopped
+    environment:
+      - LEAN_APP_URL=https://example.com
+      - LEAN_DB_HOST=mysql
+      - LEAN_DB_USER=leantime
+      - LEAN_DB_PASSWORD=changeme
+      - LEAN_DB_DATABASE=leantime
+    labels:
+      # Traefik Labels
+      - "traefik.enable=true"
+      # HTTPS Labels
+      - "traefik.http.routers.leantime.rule=Host(`localhost`)" # Domain Name
+      - "traefik.http.routers.leantime.entrypoints=web-secure"
+      - "traefik.http.routers.leantime.service=leantime"
+      - "traefik.http.routers.leantime.middlewares=default-headers@file"
+      - "traefik.http.routers.leantime.tls=true"
+      - "traefik.http.services.leantime.loadbalancer.server.port=80" # Proxied Port
+    depends_on:
+      - mysql
